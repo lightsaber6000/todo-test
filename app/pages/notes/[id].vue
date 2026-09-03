@@ -64,6 +64,7 @@
     const notesStore = useNotesStore();
     const note = ref<Note | null>(null);
     const dirty = ref(false);
+    const notFound = ref(false);
     const fieldComponent = ref<typeof Field | null>(null);
   
     const { get, create, remove, update } = notesStore;
@@ -77,19 +78,26 @@
     if (isNew.value) {
         note.value = getEmptyNote();
     } else {
-        const storedNote = await get(String(route.params.id));
+        const storedNote = await get(id.value!);
         if (!storedNote) {
-            await navigateTo('/');
-            dialog({
-                title: "Страница не найдена",
-                buttons: [
-                    { title: "Ок", value: false },
-                ],
-            })
+           notFound.value = true;
         } else {
-            note.value = structuredClone(toRaw(storedNote));
+           note.value = structuredClone(toRaw(storedNote));
         }
     }
+
+    onMounted(async () => {
+        if (!notFound.value) return;
+
+        await dialog({
+            title: "Страница не найдена",
+            buttons: [
+                { title: "Ок", value: false },
+            ],
+        });
+
+        await navigateTo("/");
+    });
 
     const onSave = () => {
         if (id.value == null) return;

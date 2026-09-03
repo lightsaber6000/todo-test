@@ -45,7 +45,7 @@
         });
 
         if (confirmed) {
-            remove(id)
+            remove(id);
         }
     };
 </script>

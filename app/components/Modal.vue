@@ -133,6 +133,9 @@
             border: 1px solid var(--color-line);
             background: var(--color-bg);
             box-shadow: var(--shadow-lg);
+            &:focus-visible {
+                outline: none;
+            }
         }
 
         &__body {

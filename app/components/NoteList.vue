@@ -4,7 +4,7 @@
             <p v-if="!preparedNotes.length">Заметок нет</p>
             <ul class="note-list__inner" v-else>
                 <li class="note-list__item" v-for="el in preparedNotes" :key="el.id">
-                    <NoteCard :note="el"/>
+                    <NoteCard :note="el" @remove="onRemove(el.id)"/>
                 </li>
             </ul>
         </div>
@@ -20,9 +20,12 @@
 
     import NoteCard from "~/components/NoteCard.vue";
 
-    const notesStore = useNotesStore();
+    import { dialog } from '~/services/dialogService';
 
+
+    const notesStore = useNotesStore();
     const { notes } = storeToRefs(notesStore);
+    const { remove } = notesStore;
 
     const preparedNotes = computed<Note[]>(() => {
         return notes.value.map(el => ({
@@ -30,13 +33,28 @@
             todos: el.todos.slice(0, 6),
         }));
     });
+
+    const onRemove = async (id: string) => {
+        const confirmed = await dialog({
+            title: "Удалить заметку?",
+            text: "Данные будут удалены окончательно",
+            buttons: [
+                { title: "Отмена", value: false },
+                { title: "Подтвердить", variant: "outline", value: true },
+            ],
+        });
+
+        if (confirmed) {
+            remove(id)
+        }
+    };
 </script>
 
 <style scoped lang="scss">
     .note-list {
         &__inner {
             display: grid;
-            gap: 50px;
+            gap: 1.875rem;
         }
     }
 </style>

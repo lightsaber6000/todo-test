@@ -97,6 +97,17 @@
             }
         }
 
+        &--danger {
+            background: transparent;
+            border-color: var(--color-danger);
+            color: var(--color-danger);
+
+            &:hover:not(:disabled) {
+                background: var(--color-danger);
+                color: var(--color-bg);
+            }
+        }
+
         &--icon-only {
             padding: 0.625rem;
             width: 2.375rem;

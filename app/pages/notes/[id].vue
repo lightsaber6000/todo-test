@@ -19,9 +19,22 @@
                     <TodoList v-model="note.todos" />
                 </div>
                 <div class="note-edit__actions">
-                    <Button @click="onSave">Сохранить изменения</Button>
-                    <Button @click="onCancelEdit" variant="outline">Отменить редактирование</Button>
-                    <Button variant="danger">Удалить</Button>
+                    <Button 
+                        @click="onSave">
+                        Сохранить изменения
+                    </Button>
+                    <Button 
+                        @click="onCancelEdit" 
+                        variant="outline" 
+                        v-if="!isNew">
+                        Отменить редактирование
+                    </Button>
+                    <Button 
+                        @click="onRemove" 
+                        variant="danger" 
+                        v-if="!isNew">
+                        Удалить
+                    </Button>
                 </div>
             </div>
         </section>
@@ -33,6 +46,7 @@
 
     import { useNotesStore } from "~/stores/notes";
     import { Undo, Redo } from '@lucide/vue';
+    import { computed, toRaw } from 'vue';
     import Field from "~/components/Field.vue";
     import Button from "~/components/Button.vue";
     import TodoList from "~/components/TodoList.vue";
@@ -45,22 +59,36 @@
     const notesStore = useNotesStore();
     const note = ref<Note | null>(null);
   
-    const { get, create } = notesStore;
+    const { get, create, remove } = notesStore;
 
-    if (route.params.id === 'new') {
+    const isNew = computed(() => route.params.id === 'new');
+    const id = computed(() => {
+        const value = route.params.id;
+        return Array.isArray(value) ? value[0] : value;
+    });
+
+    if (isNew.value) {
         note.value = getEmptyNote();
     } else {
         const storedNote = await get(String(route.params.id));
         if (!storedNote) {
-            console.log('тост + редирект');
             await navigateTo('/');
+            dialog({
+                title: "Страница не найдена",
+                buttons: [
+                    { title: "Ок", value: false },
+                ],
+            })
         } else {
             note.value = structuredClone(toRaw(storedNote));
         }
     }
 
     const onSave = () => {
-        if (note.value) create(note.value);
+        if (note.value) {
+            create(toRaw(note.value));
+            navigateTo('/');
+        }
     };
 
     const onCancelEdit = async () => {
@@ -75,8 +103,24 @@
 
         if (confirmed) {
             navigateTo('/');
-        } else {
+        }
+    };
 
+    const onRemove = async () => {
+        if (isNew.value || id.value == null) return;
+
+        const confirmed = await dialog({
+            title: "Удалить заметку?",
+            text: "Данные будут удалены окончательно",
+            buttons: [
+                { title: "Отмена", value: false },
+                { title: "Подтвердить", variant: "outline", value: true },
+            ],
+        });
+
+        if (confirmed) {
+            remove(id.value)
+            navigateTo('/');
         }
     };
 </script>

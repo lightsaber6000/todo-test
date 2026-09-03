@@ -16,3 +16,7 @@ export const createNote = async (note: Note): Promise<string> => {
 export const updateNote = async (id: string, note: Partial<Note>): Promise<number> => {
     return db.note.update(id, note);
 };
+
+export const deleteNote = async (id: string): Promise<void> => {
+    return db.note.delete(id);
+};

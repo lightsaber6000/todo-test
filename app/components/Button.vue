@@ -14,7 +14,7 @@
 <script setup lang="ts">
     import { computed } from "vue";
 
-    type ButtonVariant =
+    export type ButtonVariant =
         | "danger"
         | "outline";
 

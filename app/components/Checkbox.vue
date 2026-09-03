@@ -34,7 +34,7 @@
         display: grid;
         grid-template-columns: 18px minmax(0, 1fr);
         align-items: flex-start;
-        gap: var(--space-2);
+        gap: .75rem;
 
         &::before {
             grid-column: 1;

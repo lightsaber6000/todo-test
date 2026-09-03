@@ -5,7 +5,9 @@
         ]">    
         <div class="form-group__control">
             <slot name="prepend">
-                <div class="form-group__prepend"></div>
+                <div v-if="$slots.prepend" class="form-group__prepend">
+                    <slot name="prepend"/>
+                </div>
             </slot>
             <div class="form-group__field">
                 <input 
@@ -20,9 +22,9 @@
                     :aria-describedby="showError ? `${id}-message` : undefined"
                     @blur="onBlur">
             </div>
-            <slot name="append">
-                <div class="form-group__append"></div>
-            </slot>
+            <div v-if="$slots.append" class="form-group__append">
+                <slot name="append"/>
+            </div>
         </div>
         <div class="form-group__details" v-if="showError">
             <p class="form-group__message" aria-live="polite" :id="`${id}-message`">{{ requiredLabel || "Ошибка" }}</p>
@@ -69,7 +71,7 @@
         gap: 1.25rem;
 
         &__details {
-            margin-top: var(--space-1);
+            margin-top: .5rem;
         }
 
         &__control {

@@ -19,7 +19,7 @@
                     <TodoList v-model="note.todos" />
                 </div>
                 <div class="note-edit__actions">
-                    <Button>Сохранить изменения</Button>
+                    <Button @click="onSave">Сохранить изменения</Button>
                     <Button variant="outline">Отменить редактирование</Button>
                     <Button variant="danger">Удалить</Button>
                 </div>
@@ -43,13 +43,12 @@
     const notesStore = useNotesStore();
     const note = ref<Note | null>(null);
   
-    const { get } = notesStore;
+    const { get, create } = notesStore;
 
     if (route.params.id === 'new') {
         note.value = getEmptyNote();
     } else {
         const storedNote = await get(String(route.params.id));
-
         if (!storedNote) {
             console.log('тост + редирект');
             await navigateTo('/');
@@ -57,6 +56,10 @@
             note.value = structuredClone(toRaw(storedNote));
         }
     }
+
+    const onSave = () => {
+        if (note.value) create(note.value);
+    };
 </script>
 
 <style lang="scss">

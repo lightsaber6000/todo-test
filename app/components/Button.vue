@@ -1,6 +1,7 @@
 <template>
     <component
-        :is="to ? 'NuxtLink' : 'button'"
+        :is="to ? NuxtLinkComponent : 'button'"
+        :to="to"
         :type="props.type"
         :class="className"
         :disabled="props.disabled"
@@ -14,24 +15,32 @@
     import { computed } from "vue";
 
     type ButtonVariant =
-        | "secondary"
         | "danger"
         | "outline";
 
-    const props = defineProps<{
-        to?: string,
-        variant?: ButtonVariant;
-        iconOnly?: boolean;
-        disabled?: boolean;
-        ariaLabel?: string;
-        type?: "button" | "submit";
-    }>();
+    const props = withDefaults(
+        defineProps<{
+            to?: string,
+            variant?: ButtonVariant;
+            iconOnly?: boolean;
+            disabled?: boolean;
+            ariaLabel?: string;
+            type?: "button" | "submit";
+        }>(),
+        {
+            type: "button",
+        },
+    );
 
     const className = computed<string>(() => [
             "button",
-            props.variant && `btn--${props.variant}`,
-            props.iconOnly && "btn--icon-only",
+            props.variant && `button--${props.variant}`,
+            props.iconOnly && "button--icon-only",
         ].filter(Boolean).join(" "));
+
+    const NuxtLinkComponent = resolveComponent('NuxtLink');
+    
+    defineEmits(["click"]);
 </script>
 
 <style scoped lang="scss">
@@ -78,10 +87,8 @@
         }
 
         &--outline {
-            padding: .6em 1.1em;
             background: transparent;
             color: var(--color-text);
-            font-size: .8rem;
 
             &:hover:not(:disabled) {
                 background: var(--color-text);

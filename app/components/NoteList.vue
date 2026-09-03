@@ -2,7 +2,7 @@
     <section class="note-list">
         <div class="container">
             <p v-if="!preparedNotes.length">Заметок нет</p>
-            <ul class="note-list__list" v-else>
+            <ul class="note-list__inner" v-else>
                 <li class="note-list__item" v-for="el in preparedNotes" :key="el.id">
                     <NoteCard :note="el"/>
                 </li>
@@ -34,7 +34,7 @@
 
 <style scoped lang="scss">
     .note-list {
-        &__list {
+        &__inner {
             display: grid;
             gap: 50px;
         }

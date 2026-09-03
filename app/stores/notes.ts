@@ -43,11 +43,16 @@ export const useNotesStore = defineStore('notes', () => {
         return true;
     };
 
+    const get = async (id: string): Promise<Note | undefined> => {
+        return notes.value.find(el => el.id === id);
+    };
+
     return {
         notes,
         hydrate,
         create,
         update,
         remove,
+        get,
     };
 });

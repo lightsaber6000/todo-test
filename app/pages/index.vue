@@ -1,8 +1,8 @@
 <template>
     <main class="main">
         <section class="main-actions">
-            <div class="container main-actions__inner">
-                <Button>Создать заметку</Button>
+            <div class="container main-actions__container">
+                <Button to="/notes/new">Создать заметку</Button>
             </div>
         </section>
         <NoteList />
@@ -24,7 +24,7 @@
 
     .main-actions {
         margin-bottom: 2.5rem;
-        &__inner {
+        &__container {
             display: flex;
             justify-content: flex-end;
             flex-grow: 1;

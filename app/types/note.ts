@@ -4,7 +4,7 @@ type NoteContent = {
 };
 
 export type Todo = {
-    id: number;
+    id: string;
     text: string;
     complete: boolean;
 };

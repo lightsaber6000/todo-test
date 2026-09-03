@@ -1,6 +1,12 @@
 <template>
     <div class="todo-item">
-        <Field v-model="modelValue" label="Пункт todo" :name="`todo-${id}`">
+        <Field 
+            v-model="modelValue"
+            label="Пункт todo"
+            :name="`todo-${id}`"
+            @focus="onFocus"
+            @blur="onBlur"
+        >
             <template #prepend>
                 <Checkbox
                     :name="`checkbox-${id}`" 
@@ -44,5 +50,20 @@
 
     const id = useId();
 
-    defineEmits(["remove"]);
+    const emit = defineEmits([  
+        "change",
+        "remove",
+    ]);
+
+    let oldText = "";
+
+    const onFocus = () => {
+        oldText = modelValue.value;
+    };
+
+    const onBlur = () => {
+        if (oldText !== modelValue.value) {
+            emit("change", oldText, modelValue.value);
+        }
+    };
 </script>

@@ -9,27 +9,43 @@
                         name="name"
                         label="Название заметки" 
                         class="note-edit__name"
-                        :formDirty="dirty"
                         v-model="note.title"
+                        :formDirty="dirty"
+                        @focus="onFocus"
+                        @blur="onBlur"
                         ref="fieldComponent"
                         >
                     </Field>
-                    <Button iconOnly ariaLabel="Назад">
+                    <Button 
+                        iconOnly 
+                        @click="onUndo" 
+                        :disabled="!canUndo"
+                        ariaLabel="Назад">
                         <Undo />
                     </Button>
-                    <Button iconOnly ariaLabel="Вперед">
+                    <Button 
+                        iconOnly 
+                        @click="onRedo"
+                        :disabled="!canRedo"
+                        ariaLabel="Вперед">
                         <Redo />
                     </Button>
                 </div>
                 <div class="note-edit__middle">
-                    <TodoList v-model="note.todos" />
+                    <TodoList 
+                        v-model="note.todos"
+                        @toggle="onTodoToggle"
+                        @add="onTodoAdd"
+                        @remove="onTodoRemove"
+                        @changeText="onChangeTodoText"
+                    />
                 </div>
                 <div class="note-edit__actions">
                     <Button 
                         @click="onSave">
                         Сохранить изменения
                     </Button>
-                    <Button 
+                    <Button
                         @click="onCancelEdit" 
                         variant="outline" 
                         v-if="!isNew">
@@ -48,21 +64,21 @@
 </template>
 
 <script setup lang="ts">
-    import { type Note } from "~/types/note";
-
+    import type { Note, Todo } from "~/types/note";
+    
     import { useNotesStore } from "~/stores/notes";
     import { Undo, Redo } from '@lucide/vue';
     import { computed, toRaw } from 'vue';
     import Field from "~/components/Field.vue";
     import Button from "~/components/Button.vue";
     import TodoList from "~/components/TodoList.vue";
-
-    import getEmptyNote from '~/utils/getEmptyNote';
-    import { dialog } from '~/services/dialogService';
+    import getEmptyNote from "~/utils/getEmptyNote";
+    import { dialog } from "~/services/dialogService";
+    import { useHistory } from "~/composables/useHistory";
 
     const route = useRoute();
     const notesStore = useNotesStore();
-    const note = ref<Note | null>(null);
+    const note = ref<Note>(getEmptyNote());
     const dirty = ref(false);
     const notFound = ref(false);
     const fieldComponent = ref<typeof Field | null>(null);
@@ -70,15 +86,15 @@
     const { get, create, remove, update } = notesStore;
 
     const isNew = computed(() => route.params.id === 'new');
+
     const id = computed(() => {
         const value = route.params.id;
         return Array.isArray(value) ? value[0] : value;
     });
 
-    if (isNew.value) {
-        note.value = getEmptyNote();
-    } else {
+    if (!isNew.value) {
         const storedNote = await get(id.value!);
+
         if (!storedNote) {
            notFound.value = true;
         } else {
@@ -105,7 +121,7 @@
         const preparedNote: Note = toRaw(note.value!);
         preparedNote.todos = preparedNote.todos.filter(el => !!el.text);
 
-        if (note.value?.title?.trim?.()) {
+        if (note.value.title.trim()) {
             if (isNew.value) create(toRaw(note.value));
             else update(id.value, toRaw(note.value));
             navigateTo('/');
@@ -146,6 +162,77 @@
             remove(id.value)
             navigateTo('/');
         }
+    };
+
+    const {
+        undoStack,
+        redoStack,
+        canRedo,
+        canUndo,
+        clear,
+        redo,
+        undo,
+        push,
+     } = useHistory();
+
+    let titleBeforeEdit = "";
+
+    const onUndo = () => {
+        undo(note.value);
+    };
+
+    const onRedo = () => {
+        redo(note.value);
+    };
+
+    const onTodoToggle = (id: string, oldValue: boolean, newValue: boolean) => {
+        push({ 
+            type: "toggleTodo",
+            id,
+            oldValue,
+            newValue,
+        });
+    };
+
+    const onTodoAdd = (index: number, todo: Todo) => {
+        push({ 
+            type: "addTodo",
+            index,
+            todo,
+        });
+    };
+
+    const onTodoRemove = (index: number, todo: Todo) => {
+        push({ 
+            type: "removeTodo",
+            index,
+            todo,
+        });
+    };
+
+    const onChangeTodoText = (id: string, oldValue: string, newValue: string) => {
+        push({ 
+            type: "changeTodoText",
+            id,
+            oldValue,
+            newValue,
+        });
+    };
+
+    const onFocus = () => {
+        titleBeforeEdit = note.value.title;
+    };
+
+    const onBlur = () => {
+        if (titleBeforeEdit === note.value.title) return;
+
+        push({ 
+            type: "changeTitle",
+            oldValue: titleBeforeEdit,
+            newValue: note.value.title,
+        });
+
+        titleBeforeEdit = "";
     };
 </script>
 

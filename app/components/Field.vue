@@ -21,6 +21,7 @@
                     :required="props.required"
                     :aria-label="props.label"
                     :aria-describedby="showError ? `${id}-message` : undefined"
+                    @focus="onFocus"
                     @blur="onBlur">
             </div>
             <div v-if="$slots.append" class="form-group__append">
@@ -49,6 +50,11 @@
     const id = useId();
     const inputNode = ref<HTMLElement | null>(null);
 
+    const emit = defineEmits([  
+        "blur",
+        "focus",
+    ]);
+
     const modelValue = defineModel<string>("modelValue", {
         required: true,
     })
@@ -63,6 +69,11 @@
 
     const onBlur = () => {
         isDirty.value = true;
+        emit('blur');
+    };
+
+    const onFocus = () => {
+        emit('focus');
     };
 
     const focus = () => {

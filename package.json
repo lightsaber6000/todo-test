@@ -10,6 +10,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@lucide/vue": "^1.39.0",
     "@pinia/nuxt": "1.0.2",
     "dexie": "^4.4.5",
     "modern-normalize": "^3.0.1",

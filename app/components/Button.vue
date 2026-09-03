@@ -1,12 +1,13 @@
 <template>
-    <button
+    <component
+        :is="to ? 'NuxtLink' : 'button'"
         :type="props.type"
         :class="className"
         :disabled="props.disabled"
         :ariaLabel="props.ariaLabel"
         @click="$emit('click', $event)">
         <slot></slot>
-    </button>
+    </component>
 </template>
 
 <script setup lang="ts">
@@ -18,6 +19,7 @@
         | "outline";
 
     const props = defineProps<{
+        to?: string,
         variant?: ButtonVariant;
         iconOnly?: boolean;
         disabled?: boolean;
@@ -75,12 +77,6 @@
             }
         }
 
-        svg {
-            width: 1em;
-            height: 1em;
-            transition: transform var(--dur-1) var(--ease);
-        }
-
         &--outline {
             padding: .6em 1.1em;
             background: transparent;
@@ -92,6 +88,12 @@
                 border-color: var(--color-text);
                 color: var(--color-bg);
             }
+        }
+
+        &--icon-only {
+            padding: 0.625rem;
+            width: 2.375rem;
+            height: 2.375rem;
         }
     }
 </style>

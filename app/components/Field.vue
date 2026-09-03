@@ -14,6 +14,7 @@
                     type="text" 
                     v-model="modelValue"
                     class="form-input form-group__input"
+                    ref="inputNode"
                     :name="name"
                     :placeholder="props.label"
                     :disabled="props.disabled"
@@ -46,6 +47,7 @@
 
     const isDirty = ref(false);
     const id = useId();
+    const inputNode = ref<HTMLElement | null>(null);
 
     const modelValue = defineModel<string>("modelValue", {
         required: true,
@@ -62,12 +64,17 @@
     const onBlur = () => {
         isDirty.value = true;
     };
+
+    const focus = () => {
+        inputNode.value?.focus();
+    };
+
+    defineExpose({ focus });
 </script>
 
 <style lang="scss">
     .form-group {
         position: relative;
-        display: flex;
         gap: 1.25rem;
 
         &__details {

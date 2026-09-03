@@ -4,10 +4,16 @@
             <div class="container note-edit__container">
                 <div class="note-edit__top">
                     <Field 
+                        required
+                        requiredLabel="Название должно быть заполнено"
                         name="name"
-                        v-model="note.title"
                         label="Название заметки" 
-                        class="note-edit__name"></Field>
+                        class="note-edit__name"
+                        :formDirty="dirty"
+                        v-model="note.title"
+                        ref="fieldComponent"
+                        >
+                    </Field>
                     <Button iconOnly ariaLabel="Назад">
                         <Undo />
                     </Button>
@@ -52,14 +58,15 @@
     import TodoList from "~/components/TodoList.vue";
 
     import getEmptyNote from '~/utils/getEmptyNote';
-
     import { dialog } from '~/services/dialogService';
 
     const route = useRoute();
     const notesStore = useNotesStore();
     const note = ref<Note | null>(null);
+    const dirty = ref(false);
+    const fieldComponent = ref<typeof Field | null>(null);
   
-    const { get, create, remove } = notesStore;
+    const { get, create, remove, update } = notesStore;
 
     const isNew = computed(() => route.params.id === 'new');
     const id = computed(() => {
@@ -85,9 +92,18 @@
     }
 
     const onSave = () => {
-        if (note.value) {
-            create(toRaw(note.value));
+        if (id.value == null) return;
+
+        const preparedNote: Note = toRaw(note.value!);
+        preparedNote.todos = preparedNote.todos.filter(el => !!el.text);
+
+        if (note.value?.title?.trim?.()) {
+            if (isNew.value) create(toRaw(note.value));
+            else update(id.value, toRaw(note.value));
             navigateTo('/');
+        } else {
+            dirty.value = true;
+            fieldComponent?.value?.focus();
         }
     };
 

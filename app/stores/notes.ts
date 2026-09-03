@@ -1,7 +1,7 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
 import { getNoteList, createNote, updateNote, deleteNote } from "@/db/repositories/notes";
-import { type Note } from "@/db/schema";
+import { type Note } from "@/types/note";
 
 export const useNotesStore = defineStore('notes', () => {
     const notes = ref<Note[]>([]);
@@ -44,6 +44,7 @@ export const useNotesStore = defineStore('notes', () => {
     };
 
     return {
+        notes,
         hydrate,
         create,
         update,

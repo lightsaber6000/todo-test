@@ -1,5 +1,5 @@
 import { db } from "@/db/db";
-import type { Draft } from "@/db/schema";
+import type { Draft } from "@/types/note";
 
 export const getDraft = async (id: string): Promise<Draft | undefined> => {
     return db.draft.get(id);

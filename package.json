@@ -12,9 +12,13 @@
   "dependencies": {
     "@pinia/nuxt": "1.0.2",
     "dexie": "^4.4.5",
+    "modern-normalize": "^3.0.1",
     "nuxt": "^4.5.2",
     "pinia": "^4.0.3",
     "vue": "^3.5.42",
     "vue-router": "^5.3.0"
+  },
+  "devDependencies": {
+    "sass": "^1.103.1"
   }
 }

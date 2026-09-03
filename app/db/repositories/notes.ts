@@ -1,5 +1,5 @@
 import { db } from "@/db/db";
-import type { Note } from "@/db/schema";
+import type { Note } from "@/types/note";
 
 export const getNoteList = async (): Promise<Note[]> => {
     return db.note.toArray();

@@ -1,9 +1,11 @@
 <template>
   <NuxtPage />
+  <Dialog />
 </template>
 
 <script setup lang="ts">
     import { useNotesStore } from "~/stores/notes";
+    import Dialog from "~/components/Dialog.vue";
 
     const notesStore = useNotesStore();
 

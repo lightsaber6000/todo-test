@@ -1,8 +1,24 @@
 <template>
-    <div class="modal" role="presentation" v-if="modelValue">
-        <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-            <h3 id="modal-title" class="modal__title text-medium">{{ title }}</h3>
-            <p class="modal__text" v-if="text">{{ text }}</p>
+    <div 
+        v-if="modelValue"
+        ref="modalNode"
+        class="modal"
+        role="presentation"
+        @keydown="navigationByKeyboard"
+        @click.self="close"
+    >
+        <div
+            class="modal__dialog"
+            role="dialog"
+            aria-modal="true"
+            tabindex="0"
+            :aria-labelledby="`modal-${id}-title`"
+        >
+            <div class="modal__body">
+                <h3 :id="`modal-${id}-title`" class="modal__title">{{ title }}</h3>
+                <p class="modal__text" v-if="text">{{ text }}</p>
+            </div>
+
             <div v-if="$slots.default" class="modal__actions">
                 <slot />
             </div>
@@ -11,6 +27,8 @@
 </template>
 
 <script setup lang="ts">
+    import { nextTick, useId, ref, watch } from "vue";
+
     const props = defineProps<{
         title: string;
         text?: string;
@@ -18,6 +36,82 @@
 
     const modelValue = defineModel<boolean>("modelValue", {
         required: true,
+    });
+
+    const id = useId();
+    const modalNode = ref<HTMLElement | null>(null);
+    let previouslyFocusedElement: HTMLElement | null = null;
+
+    const close = () => {
+        modelValue.value = false;
+    };
+
+    const getFocusableElements = (): HTMLElement[] => {
+        if (!modalNode.value) {
+            return [];
+        }
+
+        return Array.from(
+            modalNode.value.querySelectorAll<HTMLElement>(
+                [
+                    "a[href]",
+                    "button:not([disabled])",
+                    "input:not([disabled])",
+                    "select:not([disabled])",
+                    "textarea:not([disabled])",
+                    '[tabindex]:not([tabindex="-1"])',
+                ].join(","),
+            ),
+        );
+    };
+
+    const navigationByKeyboard = (event: KeyboardEvent) => {
+        switch (event.key) {
+            case "Tab": {
+                if (!modalNode.value) break;
+
+                const focusableElements = getFocusableElements();
+
+                if (!focusableElements.length) break;
+
+                const firstElement = focusableElements[0]!;
+                const lastElement = focusableElements[focusableElements.length - 1]!;
+
+                if (!event.shiftKey && lastElement === document.activeElement) {
+                    event.preventDefault();
+                    firstElement.focus();
+                } else if (event.shiftKey && firstElement === document.activeElement) {
+                    event.preventDefault();
+                    lastElement.focus();
+                }
+
+                break;
+            }
+
+            case "Escape":
+                close();
+                break;
+
+            default:
+                break;
+        }
+    };
+
+    watch(modelValue, async (isOpen) => {
+        if (isOpen) {
+            previouslyFocusedElement = document.activeElement as HTMLElement | null;
+
+            await nextTick();
+
+            const focusableElements = getFocusableElements();
+
+            focusableElements[0]?.focus();
+
+            return;
+        }
+
+        previouslyFocusedElement?.focus();
+        previouslyFocusedElement = null;
     });
 </script>
 
@@ -37,20 +131,19 @@
             max-width: 460px;
             padding: 28px;
             border: 1px solid var(--color-line);
-            border-radius: 20px;
             background: var(--color-bg);
             box-shadow: var(--shadow-lg);
+        }
+
+        &__body {
+            margin-bottom: 3.125rem;   
         }
 
         &__title { 
             margin: 0 0 18px;
             font-weight: 600;
         }
-        &__body { 
-            margin: 0 0 22px; 
-            color: var(--color-text-40); 
-            white-space: pre-line;
-        }
+
         &__actions { 
             display: flex; 
             justify-content: flex-end; 

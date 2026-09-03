@@ -21,10 +21,8 @@
     import Button from "~/components/Button.vue";
 
     const options = ref<DialogOptions | null>(null);
-
+    let showModal = ref<boolean>(false);
     let resolveDialog: ((value: DialogResult) => void) | null = null;
-
-    const showModal = computed(() => !!options);
 
     const buttons = computed(() => options.value?.buttons ?? [
         {
@@ -36,6 +34,7 @@
 
     setDialogFn((dialogOptions) => {
         options.value = dialogOptions;
+        showModal.value = true;
 
         return new Promise<DialogResult>((resolve) => {
             resolveDialog = resolve;
@@ -46,6 +45,7 @@
         resolveDialog?.(value);
 
         options.value = null;
+        showModal.value = false;
         resolveDialog = null;
     };
 </script>

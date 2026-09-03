@@ -20,7 +20,7 @@
                 </div>
                 <div class="note-edit__actions">
                     <Button @click="onSave">Сохранить изменения</Button>
-                    <Button variant="outline">Отменить редактирование</Button>
+                    <Button @click="onCancelEdit" variant="outline">Отменить редактирование</Button>
                     <Button variant="danger">Удалить</Button>
                 </div>
             </div>
@@ -38,6 +38,8 @@
     import TodoList from "~/components/TodoList.vue";
 
     import getEmptyNote from '~/utils/getEmptyNote';
+
+    import { dialog } from '~/services/dialogService';
 
     const route = useRoute();
     const notesStore = useNotesStore();
@@ -59,6 +61,23 @@
 
     const onSave = () => {
         if (note.value) create(note.value);
+    };
+
+    const onCancelEdit = async () => {
+        const confirmed = await dialog({
+            title: "Отменить редактирование?",
+            text: "Все внесенные изменения будут удалены",
+            buttons: [
+                { title: "Отмена", value: false },
+                { title: "Подтвердить", variant: "outline", value: true },
+            ],
+        });
+
+        if (confirmed) {
+            navigateTo('/');
+        } else {
+
+        }
     };
 </script>
 

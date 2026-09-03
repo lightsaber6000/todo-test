@@ -4,7 +4,7 @@ export type DialogResult = string | number | boolean | null;
 
 export type DialogButton = {
     title: string;
-    variant: ButtonVariant;
+    variant?: ButtonVariant;
     value: DialogResult;
 };
 

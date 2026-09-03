@@ -78,6 +78,7 @@
     }
     &__middle {
         flex-grow: 1;
+        margin-bottom: 6.25rem;
     }
     &__container {
         width: 100%;

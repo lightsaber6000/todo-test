@@ -2,6 +2,8 @@ import { ref, computed, toRaw } from "vue";
 import type { Note } from "~/types/note";
 import type { Operation } from "~/types/history";
 
+const historyLimit = 50;
+
 export const useHistory = () => {
     let undoStack = ref<Operation[]>([]);
     let redoStack = ref<Operation[]>([]);
@@ -72,6 +74,11 @@ export const useHistory = () => {
 
     const push = (op: Operation) => {
         undoStack.value.push(op);
+
+        if (undoStack.value.length > historyLimit) {
+            undoStack.value.shift();
+        }
+
         redoStack.value = [];
     };
 
@@ -89,7 +96,6 @@ export const useHistory = () => {
 
         if (!operation) return;
 
-        console.log('redo');
         applyOperation(note, operation, "redo");
         undoStack.value.push(operation);
     };

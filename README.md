@@ -1,75 +1,30 @@
-# Nuxt Minimal Starter
+# Todo Notes
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+SPA-приложение для заметок со списками задач.
 
-## Setup
-
-Make sure to install dependencies:
+## Запуск в Docker
 
 ```bash
-# npm
-npm install
+docker-compose up --build
+```
 
-# pnpm
+Открыть приложение: http://localhost:3000.
+
+
+## Локальный запуск
+
+Требуются Node.js 24 и pnpm.
+
+```bash
 pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
-```
-
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
-# npm
-npm run dev
-
-# pnpm
 pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
 ```
 
-## Production
+Приложение будет доступно по адресу http://localhost:3000.
 
-Build the application for production:
+## Проверки
 
 ```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
+pnpm test
+pnpm typecheck
 ```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.

@@ -53,10 +53,10 @@
 
     const id = useId();
 
-    const emit = defineEmits([  
-        "change",
-        "remove",
-    ]);
+    const emit = defineEmits<{
+        change: [oldValue: string, newValue: string];
+        remove: [];
+    }>();
 
     let oldText = "";
 

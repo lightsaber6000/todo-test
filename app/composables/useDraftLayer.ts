@@ -17,35 +17,56 @@ export const useDraftLayer = (isNew: Ref<boolean>, id: Ref<string | undefined>, 
     } = draftsStore;
 
     const draftKey = computed(() => {
-        return isNew.value
-            ? "new"
-            : id.value ?? null;
+        return isNew.value ? "new" : id.value ?? null;
     });
 
     let stopDraftWatch: (() => void) | null = null;
+    let hasUnsavedChanges = false;
 
-    const saveDraftDebounced = debounce(async () => {
-        if (!note.value || !draftKey.value) return;
+    const saveDraftNow = () => {
+        const currentNote = note.value;
+        const key = draftKey.value;
 
-        await saveDraft(
+        if (!hasUnsavedChanges || !currentNote || !key) return;
+
+        saveDraft(
             {
-                noteId: draftKey.value,
-                note: structuredClone(toRaw(note.value)),
+                noteId: key,
+                note: structuredClone(toRaw(currentNote)),
             },
-            draftKey.value,
+            key,
         );
-    }, 700);
+
+        hasUnsavedChanges = false;
+    };
+
+    const saveDraftDebounced = debounce(saveDraftNow, 700);
+
+    const flushDraft = () => {
+        saveDraftDebounced.cancel();
+        saveDraftNow();
+    };
+
+    const stopDraftAutosave = () => {
+        stopDraftWatch?.();
+        stopDraftWatch = null;
+
+        window.removeEventListener("pagehide", flushDraft);
+    };
 
     const startDraftAutosave = () => {
         stopDraftWatch = watch(
             note,
             () => {
+                hasUnsavedChanges = true;
                 saveDraftDebounced();
             },
             {
                 deep: true,
             },
         );
+
+        window.addEventListener("pagehide", flushDraft);
     };
 
     const initDraft = async (
@@ -53,7 +74,7 @@ export const useDraftLayer = (isNew: Ref<boolean>, id: Ref<string | undefined>, 
     ): Promise<void> => {
         const key = draftKey.value!;
 
-        await loadDraft(key);
+        loadDraft(key);
 
         let editorNote = initialNote;
 
@@ -78,7 +99,7 @@ export const useDraftLayer = (isNew: Ref<boolean>, id: Ref<string | undefined>, 
             if (restore) {
                 editorNote = structuredClone(toRaw(currentDraft.note));
             } else {
-                await removeDraft(key);
+                removeDraft(key);
             }
         }
 
@@ -87,26 +108,23 @@ export const useDraftLayer = (isNew: Ref<boolean>, id: Ref<string | undefined>, 
         startDraftAutosave();
     };
 
-    const discardDraft = async () => {
-        stopDraftWatch?.();
-        stopDraftWatch = null;
-
+    const discardDraft = () => {
+        stopDraftAutosave();
         saveDraftDebounced.cancel();
+        hasUnsavedChanges = false;
 
         const key = draftKey.value;
 
         if (key) {
-            await removeDraft(key);
+            removeDraft(key);
         }
 
         clearDraft();
     };
 
     onUnmounted(() => {
-        stopDraftWatch?.();
-        stopDraftWatch = null;
-
-        saveDraftDebounced.flush();
+        stopDraftAutosave();
+        flushDraft();
     });
 
     return {

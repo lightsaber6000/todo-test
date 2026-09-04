@@ -13,7 +13,7 @@ export const initMetadata = async (): Promise<void> => {
     await db.transaction("rw", db.metadata, async () => {
         const metadata = await db.metadata.get("app");
 
-        if (metadata) return;
+        if (metadata?.schemaVersion === schemaVersion) return;
 
         await db.metadata.put({
             key: "app",

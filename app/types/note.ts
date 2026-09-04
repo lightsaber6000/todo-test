@@ -1,21 +1,19 @@
-type NoteContent = {
-    title: string;
-    todos: Todo[];
-};
-
 export type Todo = {
     id: string;
     text: string;
     complete: boolean;
 };
 
-export type Note = NoteContent & {
+export type Note = {
     id: string;
+    title: string;
+    todos: Todo[];
     revision: number;
 };
 
-export type Draft = NoteContent & {
+export type Draft = {
     noteId: string;
+    note: Note;
     baseRevision: number;
 };
 

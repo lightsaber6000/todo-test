@@ -5,8 +5,8 @@ import type { Operation } from "~/types/history";
 const historyLimit = 50;
 
 export const useHistory = () => {
-    let undoStack = ref<Operation[]>([]);
-    let redoStack = ref<Operation[]>([]);
+    const undoStack = ref<Operation[]>([]);
+    const redoStack = ref<Operation[]>([]);
 
     const applyOperation = (
         note: Note,

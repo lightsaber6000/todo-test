@@ -2,6 +2,7 @@ import { ref } from "vue";
 import { defineStore } from "pinia";
 import { getNoteList, createNote, updateNote, deleteNote } from "@/db/repositories/notes";
 import { type Note } from "@/types/note";
+import { broadcastNoteDeleted } from "@/services/notesSync";
 
 export const useNotesStore = defineStore('notes', () => {
     const notes = ref<Note[]>([]);
@@ -40,7 +41,12 @@ export const useNotesStore = defineStore('notes', () => {
     const remove = async (id: string): Promise<boolean> => {
         await deleteNote(id);
         notes.value = notes.value.filter(el => el.id !== id);
+        broadcastNoteDeleted(id);
         return true;
+    };
+
+    const removeLocal = (id: string) => {
+        notes.value = notes.value.filter(note => note.id !== id);
     };
 
     const get = async (id: string): Promise<Note | undefined> => {
@@ -53,6 +59,7 @@ export const useNotesStore = defineStore('notes', () => {
         create,
         update,
         remove,
+        removeLocal,
         get,
     };
 });

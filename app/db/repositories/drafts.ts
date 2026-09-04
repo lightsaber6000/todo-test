@@ -1,14 +1,14 @@
-import { db } from "@/db/db";
-import type { Draft } from "@/types/note";
+import { db } from "~/db/db";
+import type { Draft } from "~/types/note";
 
 export const getDraft = async (id: string): Promise<Draft | undefined> => {
     return db.draft.get(id);
 };
 
-export const createDraft = async (draft: Draft): Promise<string> => {
-    return db.draft.add(draft);
+export const saveDraft = async (draft: Draft, id: string): Promise<string> => {
+    return db.draft.put(draft, id);
 };
 
-export const updateDraft = async (id: string, draft: Partial<Draft>): Promise<number> => {
-    return db.draft.update(id, draft);
+export const removeDraft = async (id: string): Promise<void> => {
+    return db.draft.delete(id);
 };

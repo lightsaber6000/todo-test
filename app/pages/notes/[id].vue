@@ -65,82 +65,149 @@
 
 <script setup lang="ts">
     import type { Note, Todo } from "~/types/note";
-    
-    import { useNotesStore } from "~/stores/notes";
-    import { Undo, Redo } from '@lucide/vue';
-    import { computed, toRaw, onMounted, onUnmounted } from 'vue';
+
+    import { computed, onMounted, ref, toRaw } from "vue";
+    import { Undo, Redo } from "@lucide/vue";
+
     import Field from "~/components/Field.vue";
     import Button from "~/components/Button.vue";
     import TodoList from "~/components/TodoList.vue";
+
+    import { useNotesStore } from "~/stores/notes";
+
+    import { useHistoryLayer } from "~/composables/useHistoryLayer";
+    import { useDraftLayer } from "~/composables/useDraftLayer";
+    import { useSyncLayer } from "~/composables/useSyncLayer";
+
     import getEmptyNote from "~/utils/getEmptyNote";
     import { dialog } from "~/services/dialogService";
-    import { useHistory } from "~/composables/useHistory";
 
     const route = useRoute();
-    const notesStore = useNotesStore();
-    const note = ref<Note>(getEmptyNote());
-    const dirty = ref(false);
-    const notFound = ref(false);
-    const fieldComponent = ref<typeof Field | null>(null);
-  
-    const { get, create, remove, update } = notesStore;
 
-    const isNew = computed(() => route.params.id === 'new');
+    const isNew = computed(() => route.params.id === "new");
 
     const id = computed(() => {
         const value = route.params.id;
-        return Array.isArray(value) ? value[0] : value;
+
+        return Array.isArray(value)
+            ? value[0]
+            : value;
     });
 
-    if (!isNew.value) {
-        const storedNote = await get(id.value!);
+    const note = ref<Note | null>(null);
+    const dirty = ref(false);
 
-        if (!storedNote) {
-           notFound.value = true;
-        } else {
-           note.value = structuredClone(toRaw(storedNote));
-        }
-    }
+    const fieldComponent = ref<typeof Field | null>(null);
 
-    onMounted(async () => {
-        if (!notFound.value) return;
+    const notesStore = useNotesStore();
 
-        await dialog({
-            title: "Страница не найдена",
-            buttons: [
-                { title: "Ок", value: false },
-            ],
-        });
+    const {
+        get,
+        create,
+        remove,
+        update,
+    } = notesStore;
 
-        await navigateTo("/");
-    });
 
     const {
         canRedo,
         canUndo,
-        clear,
-        redo,
-        undo,
-        push,
-     } = useHistory();
+        onBlur,
+        onFocus,
+        onChangeTodoText,
+        onTodoRemove,
+        onTodoAdd,
+        onTodoToggle,
+        onUndo,
+        onRedo,
+        clearHistory,
+    } = useHistoryLayer(note);
 
-    let titleBeforeEdit = "";
-    let stopKeyboardEvents = false;
 
-    const onSave = () => {
-        if (id.value == null) return;
+    const {
+        initDraft,
+        discardDraft,
+    } = useDraftLayer(
+        isNew,
+        id,
+        note,
+    );
 
-        const preparedNote: Note = toRaw(note.value!);
-        preparedNote.todos = preparedNote.todos.filter(el => !!el.text);
+    useSyncLayer(
+        isNew,
+        id,
+        async () => {
+            await discardDraft();
+            clearHistory();
+        },
+    );
 
-        if (note.value.title.trim()) {
-            if (isNew.value) create(toRaw(note.value));
-            else update(id.value, toRaw(note.value));
-            navigateTo('/');
+    const initEditor = async (): Promise<boolean> => {
+        let initialNote: Note;
+
+        if (isNew.value) {
+            initialNote = getEmptyNote();
         } else {
-            dirty.value = true;
-            fieldComponent?.value?.focus();
+            const storedNote = await get(id.value!);
+
+            if (!storedNote) {
+                await dialog({
+                    title: "Страница не найдена",
+                    buttons: [
+                        {
+                            title: "Ок",
+                            value: false,
+                        },
+                    ],
+                });
+
+                await navigateTo("/");
+
+                return false;
+            }
+
+            initialNote = structuredClone(
+                toRaw(storedNote),
+            );
         }
+
+        await initDraft(initialNote);
+
+        return true;
+    };
+
+    const onSave = async () => {
+        if (!note.value || id.value == null) return;
+
+        if (!note.value.title.trim()) {
+            dirty.value = true;
+            fieldComponent.value?.focus();
+
+            return;
+        }
+
+        const preparedNote = structuredClone(
+            toRaw(note.value),
+        );
+
+        preparedNote.todos = preparedNote.todos.filter(
+            todo => !!todo.text.trim(),
+        );
+
+        if (isNew.value) {
+            await create(preparedNote);
+        } else {
+            await update(
+                id.value,
+                preparedNote,
+            );
+        }
+
+        await discardDraft();
+
+        clearHistory();
+
+        navigateTo("/");
     };
 
     const onCancelEdit = async () => {
@@ -148,15 +215,25 @@
             title: "Отменить редактирование?",
             text: "Все внесенные изменения будут удалены",
             buttons: [
-                { title: "Отмена", value: false },
-                { title: "Подтвердить", variant: "outline", value: true },
+                {
+                    title: "Отмена",
+                    value: false,
+                },
+                {
+                    title: "Подтвердить",
+                    variant: "outline",
+                    value: true,
+                },
             ],
         });
 
-        if (confirmed) {
-            clear();
-            navigateTo('/');
-        }
+        if (!confirmed) return;
+
+        await discardDraft();
+
+        clearHistory();
+
+        navigateTo("/");
     };
 
     const onRemove = async () => {
@@ -166,125 +243,61 @@
             title: "Удалить заметку?",
             text: "Данные будут удалены окончательно",
             buttons: [
-                { title: "Отмена", value: false },
-                { title: "Подтвердить", variant: "outline", value: true },
+                {
+                    title: "Отмена",
+                    value: false,
+                },
+                {
+                    title: "Подтвердить",
+                    variant: "outline",
+                    value: true,
+                },
             ],
         });
 
-        if (confirmed) {
-            remove(id.value)
-            navigateTo('/');
-        }
+        if (!confirmed) return;
+
+        await remove(id.value);
+
+        await discardDraft();
+
+        clearHistory();
+
+        navigateTo("/");
     };
 
-    const onUndo = () => {
-        undo(note.value);
-    };
-
-    const onRedo = () => {
-        redo(note.value);
-    };
-
-    const onTodoToggle = (id: string, oldValue: boolean, newValue: boolean) => {
-        push({ 
-            type: "toggleTodo",
-            id,
-            oldValue,
-            newValue,
-        });
-    };
-
-    const onTodoAdd = (index: number, todo: Todo) => {
-        push({ 
-            type: "addTodo",
-            index,
-            todo,
-        });
-    };
-
-    const onTodoRemove = (index: number, todo: Todo) => {
-        push({ 
-            type: "removeTodo",
-            index,
-            todo,
-        });
-    };
-
-    const onChangeTodoText = (id: string, oldValue: string, newValue: string) => {
-        push({ 
-            type: "changeTodoText",
-            id,
-            oldValue,
-            newValue,
-        });
-    };
-
-    const onFocus = () => {
-        titleBeforeEdit = note.value.title;
-        stopKeyboardEvents = true;
-    };
-
-    const onBlur = () => {
-        if (titleBeforeEdit === note.value.title) return;
-
-        push({ 
-            type: "changeTitle",
-            oldValue: titleBeforeEdit,
-            newValue: note.value.title,
-        });
-
-        titleBeforeEdit = "";
-        stopKeyboardEvents = false;
-    };
-
-    const historyHotkeyHandle = (event: KeyboardEvent) => {
-       const isUndoHotkey = event.ctrlKey && !event.shiftKey && event.code === 'KeyZ';
-       const isRedoHotkey = event.ctrlKey && event.shiftKey && event.code === 'KeyZ';
-
-       if (stopKeyboardEvents) return;
-
-       if (isUndoHotkey || isRedoHotkey) event.preventDefault();
-
-       if (isUndoHotkey && canUndo.value) undo(note.value);
-
-       if (isRedoHotkey && canRedo.value) redo(note.value);
-    }
 
     onMounted(() => {
-        document.addEventListener('keydown', historyHotkeyHandle);
+        initEditor();
     });
-
-    onUnmounted(() => {
-        document.removeEventListener('keydown', historyHotkeyHandle);
-    })
 </script>
 
 <style lang="scss">
-.note-edit {
-    height: 100%;
-    width: 100%;
-    &__name {
-        flex-grow: 1;
-    }
-    &__top {
-        display: flex;
-        gap: 1.25rem;
-        margin-bottom: 2.5rem;
-    }
-    &__actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 0.625rem;
-    }
-    &__middle {
-        flex-grow: 1;
-        margin-bottom: 6.25rem;
-    }
-    &__container {
-        width: 100%;
+    .note-edit {
         height: 100%;
-        display: flex;
-        flex-direction: column;
+        width: 100%;
+        &__name {
+            flex-grow: 1;
+        }
+        &__top {
+            display: flex;
+            gap: 1.25rem;
+            margin-bottom: 2.5rem;
+        }
+        &__actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.625rem;
+        }
+        &__middle {
+            flex-grow: 1;
+            margin-bottom: 6.25rem;
+        }
+        &__container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
     }
-}
 </style>

@@ -12,11 +12,6 @@
 <script setup lang="ts">
     import Button from '~/components/Button.vue';
     import NoteList from '~/components/NoteList.vue';
-    import { useNotesStore } from "~/stores/notes";
-
-    const notesStore = useNotesStore();
-
-    notesStore.hydrate();
 </script>
 
 <style lang="scss"> 

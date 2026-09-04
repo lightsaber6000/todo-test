@@ -5,7 +5,7 @@
         :type="props.type"
         :class="className"
         :disabled="props.disabled"
-        :ariaLabel="props.ariaLabel"
+        :aria-label="props.ariaLabel"
         @click="$emit('click', $event)">
         <slot></slot>
     </component>

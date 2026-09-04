@@ -101,6 +101,7 @@
 
         &__field {
             flex-grow: 1;
+            min-width: 0;
         }
 
         &__message {

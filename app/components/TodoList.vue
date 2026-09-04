@@ -6,12 +6,13 @@
                 :key="todo.id"
                 v-model="todo.text"
                 v-model:complete="todo.complete"
+                :disabled="disabled"
                 @change="(oldValue, newValue) => onChangeText(todo.id, oldValue, newValue)"
                 @update:complete="newValue => onToggleComplete(todo.id, newValue)"
                 @remove="() => onRemove(todo.id)"
             />
         </div>
-        <Button @click="onAdd">Добавить пункт</Button>
+        <Button @click="onAdd" :disabled="disabled">Добавить пункт</Button>
     </div>
 </template>
 
@@ -22,6 +23,10 @@
     import { type Todo } from "~/types/note";
 
     import getEmptyTodo from "~/utils/getEmptyTodo";
+
+    defineProps<{
+        disabled?: boolean;
+    }>();
 
     const modelValue = defineModel<Todo[]>({
         required: true,

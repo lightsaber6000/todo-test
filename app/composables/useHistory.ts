@@ -73,7 +73,7 @@ export const useHistory = () => {
     };
 
     const push = (op: Operation) => {
-        undoStack.value.push(op);
+        undoStack.value.push(structuredClone(toRaw(op)));
 
         if (undoStack.value.length > historyLimit) {
             undoStack.value.shift();

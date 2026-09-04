@@ -27,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-    import { nextTick, useId, ref, watch } from "vue";
+    import { nextTick, onUnmounted, useId, ref, watch } from "vue";
 
     const props = defineProps<{
         title: string;
@@ -98,6 +98,8 @@
     };
 
     watch(modelValue, async (isOpen) => {
+        document.body.classList.toggle('is-blocked', isOpen);
+
         if (isOpen) {
             previouslyFocusedElement = document.activeElement as HTMLElement | null;
 
@@ -110,10 +112,12 @@
             return;
         }
 
-        document.body.classList.toggle('is-blocked', isOpen);
-
         previouslyFocusedElement?.focus();
         previouslyFocusedElement = null;
+    });
+
+    onUnmounted(() => {
+        document.body.classList.remove('is-blocked');
     });
 </script>
 

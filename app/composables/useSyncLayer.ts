@@ -23,7 +23,7 @@ export const useSyncLayer = (
             buttons: [
                 {
                     title: "Ок",
-                    value: false,
+                    value: null,
                 },
             ],
         });

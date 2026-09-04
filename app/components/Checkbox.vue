@@ -4,7 +4,7 @@
             type="checkbox"
             class="form-checkbox__input"
             v-model="modelValue"
-            :ariaLabel="ariaLabel"
+            :aria-label="ariaLabel"
             :id="id"
             :name="props.name"
             :disabled="props.disabled"

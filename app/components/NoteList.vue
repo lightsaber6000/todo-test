@@ -4,7 +4,10 @@
             <p v-if="!preparedNotes.length">Заметок нет</p>
             <ul class="note-list__inner" v-else>
                 <li class="note-list__item" v-for="el in preparedNotes" :key="el.id">
-                    <NoteCard :note="el" @remove="onRemove(el.id)"/>
+                    <NoteCard
+                        :note="el"
+                        :removing="removingId === el.id"
+                        @remove="onRemove(el.id)"/>
                 </li>
             </ul>
         </div>
@@ -16,7 +19,7 @@
 
     import { useNotesStore } from "~/stores/notes";
     import { storeToRefs } from 'pinia';
-    import { computed } from "vue";
+    import { computed, ref } from "vue";
 
     import NoteCard from "~/components/NoteCard.vue";
 
@@ -26,6 +29,7 @@
     const notesStore = useNotesStore();
     const { notes } = storeToRefs(notesStore);
     const { remove } = notesStore;
+    const removingId = ref<string | null>(null);
 
     const preparedNotes = computed<Note[]>(() => {
         return notes.value.map(el => ({
@@ -35,17 +39,38 @@
     });
 
     const onRemove = async (id: string) => {
-        const confirmed = await dialog({
-            title: "Удалить заметку?",
-            text: "Данные будут удалены окончательно",
-            buttons: [
-                { title: "Отмена", value: false },
-                { title: "Подтвердить", variant: "outline", value: true },
-            ],
-        });
+        if (removingId.value) return;
 
-        if (confirmed) {
-            remove(id);
+        removingId.value = id;
+
+        try {
+            const confirmed = await dialog({
+                title: "Удалить заметку?",
+                text: "Данные будут удалены окончательно",
+                buttons: [
+                    { title: "Отмена", value: false },
+                    { title: "Подтвердить", variant: "outline", value: true },
+                ],
+            });
+
+            if (confirmed) {
+                await remove(id);
+            }
+        } catch (error) {
+            console.error(error);
+
+            await dialog({
+                title: "Не удалось удалить заметку",
+                text: "Попробуйте ещё раз",
+                buttons: [
+                    {
+                        title: "Ок",
+                        value: null,
+                    },
+                ],
+            });
+        } finally {
+            removingId.value = null;
         }
     };
 </script>

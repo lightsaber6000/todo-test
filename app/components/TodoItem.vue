@@ -4,6 +4,7 @@
             v-model="modelValue"
             label="Пункт todo"
             :name="`todo-${id}`"
+            :disabled="disabled"
             @focus="onFocus"
             @blur="onBlur"
         >
@@ -11,6 +12,7 @@
                 <Checkbox
                     :name="`checkbox-${id}`" 
                     :ariaLabel="`Отметить ${modelValue} ${complete ? 'невыполненным' : 'выполненным'}`"
+                    :disabled="disabled"
                     v-model="complete">
                 </Checkbox>
             </template>
@@ -18,6 +20,7 @@
                 <Button 
                     iconOnly 
                     :ariaLabel="`Удалить ${modelValue}`"
+                    :disabled="disabled"
                     @click="$emit('remove')">
                     <Trash />
                 </Button>

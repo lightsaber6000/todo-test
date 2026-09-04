@@ -8,12 +8,16 @@ export const getMetadata = async (): Promise<Metadata | undefined> => {
 };
 
 export const initMetadata = async (): Promise<void> => {
-    const metadata = await getMetadata();
+    // Чтение и запись объединены в транзакцию, чтобы при одновременном первом
+    // запуске в двух вкладках обе не пытались создать один и тот же ключ metadata.
+    await db.transaction("rw", db.metadata, async () => {
+        const metadata = await db.metadata.get("app");
 
-    if (metadata) return;
+        if (metadata) return;
 
-    await db.metadata.add({
-        key: "app",
-        schemaVersion,
+        await db.metadata.put({
+            key: "app",
+            schemaVersion,
+        });
     });
 };

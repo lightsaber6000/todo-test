@@ -11,6 +11,7 @@
                         class="note-edit__name"
                         v-model="note.title"
                         :formDirty="dirty"
+                        :disabled="isProcessing"
                         @focus="onFocus"
                         @blur="onBlur"
                         ref="fieldComponent"
@@ -19,14 +20,14 @@
                     <Button 
                         iconOnly 
                         @click="onUndo" 
-                        :disabled="!canUndo"
+                        :disabled="isProcessing || !canUndo"
                         ariaLabel="Назад">
                         <Undo />
                     </Button>
                     <Button 
                         iconOnly 
                         @click="onRedo"
-                        :disabled="!canRedo"
+                        :disabled="isProcessing || !canRedo"
                         ariaLabel="Вперед">
                         <Redo />
                     </Button>
@@ -34,6 +35,7 @@
                 <div class="note-edit__middle">
                     <TodoList 
                         v-model="note.todos"
+                        :disabled="isProcessing"
                         @toggle="onTodoToggle"
                         @add="onTodoAdd"
                         @remove="onTodoRemove"
@@ -42,17 +44,20 @@
                 </div>
                 <div class="note-edit__actions">
                     <Button 
-                        @click="onSave">
+                        @click="onSave"
+                        :disabled="isProcessing">
                         Сохранить изменения
                     </Button>
                     <Button
-                        @click="onCancelEdit" 
+                        @click="onCancelEdit"
+                        :disabled="isProcessing"
                         variant="outline" 
                         v-if="!isNew">
                         Отменить редактирование
                     </Button>
                     <Button 
-                        @click="onRemove" 
+                        @click="onRemove"
+                        :disabled="isProcessing"
                         variant="danger" 
                         v-if="!isNew">
                         Удалить
@@ -96,6 +101,7 @@
 
     const note = ref<Note | null>(null);
     const dirty = ref(false);
+    const isProcessing = ref(false);
 
     const fieldComponent = ref<typeof Field | null>(null);
 
@@ -133,15 +139,6 @@
         note,
     );
 
-    useSyncLayer(
-        isNew,
-        id,
-        async () => {
-            await discardDraft();
-            clearHistory();
-        },
-    );
-
     const initEditor = async (): Promise<boolean> => {
         let initialNote: Note;
 
@@ -176,95 +173,185 @@
         return true;
     };
 
-    const onSave = async () => {
-        if (!note.value || id.value == null) return;
+    const prepareNote = (source: Note): Note => {
+        const preparedNote = structuredClone(toRaw(source));
 
-        if (!note.value.title.trim()) {
+        preparedNote.todos = preparedNote.todos.filter(
+            todo => !!todo.text.trim(),
+        );
+
+        return preparedNote;
+    };
+
+    const finishEditing = async () => {
+        await discardDraft();
+        clearHistory();
+        await navigateTo("/");
+    };
+
+    const showOperationError = async (title: string) => {
+        await dialog({
+            title,
+            text: "Попробуйте ещё раз",
+            buttons: [
+                {
+                    title: "Ок",
+                    value: null,
+                },
+            ],
+        });
+    };
+
+    const onSave = async () => {
+        const currentNote = note.value;
+        const noteId = id.value;
+
+        if (
+            !currentNote ||
+            noteId == null ||
+            isProcessing.value
+        ) {
+            return;
+        }
+
+        if (!currentNote.title.trim()) {
             dirty.value = true;
             fieldComponent.value?.focus();
 
             return;
         }
 
-        const preparedNote = structuredClone(
-            toRaw(note.value),
-        );
+        isProcessing.value = true;
 
-        preparedNote.todos = preparedNote.todos.filter(
-            todo => !!todo.text.trim(),
-        );
+        try {
+            const preparedNote = prepareNote(currentNote);
 
-        if (isNew.value) {
-            await create(preparedNote);
-        } else {
-            await update(
-                id.value,
-                preparedNote,
-            );
+            if (isNew.value) {
+                await create(preparedNote);
+            } else {
+                const updated = await update(
+                    noteId,
+                    preparedNote,
+                );
+
+                if (!updated) {
+                    await dialog({
+                        title: "Заметка удалена",
+                        text: "Эта заметка была удалена в другой вкладке",
+                        buttons: [
+                            {
+                                title: "Ок",
+                                value: null,
+                            },
+                        ],
+                    });
+
+                    await finishEditing();
+
+                    return;
+                }
+            }
+
+            await finishEditing();
+        } catch (error) {
+            console.error(error);
+
+            await showOperationError("Не удалось сохранить заметку");
+        } finally {
+            isProcessing.value = false;
         }
-
-        await discardDraft();
-
-        clearHistory();
-
-        navigateTo("/");
     };
 
     const onCancelEdit = async () => {
-        const confirmed = await dialog({
-            title: "Отменить редактирование?",
-            text: "Все внесенные изменения будут удалены",
-            buttons: [
-                {
-                    title: "Отмена",
-                    value: false,
-                },
-                {
-                    title: "Подтвердить",
-                    variant: "outline",
-                    value: true,
-                },
-            ],
-        });
+        if (isProcessing.value) return;
 
-        if (!confirmed) return;
+        isProcessing.value = true;
 
-        await discardDraft();
+        try {
+            const confirmed = await dialog({
+                title: "Отменить редактирование?",
+                text: "Все внесенные изменения будут удалены",
+                buttons: [
+                    {
+                        title: "Отмена",
+                        value: false,
+                    },
+                    {
+                        title: "Подтвердить",
+                        variant: "outline",
+                        value: true,
+                    },
+                ],
+            });
 
-        clearHistory();
+            if (!confirmed) return;
 
-        navigateTo("/");
+            await finishEditing();
+
+        } catch (error) {
+            
+            console.error(error);
+
+            await showOperationError("Не удалось отменить редактирование");
+        } finally {
+            isProcessing.value = false;
+        }
     };
 
     const onRemove = async () => {
-        if (isNew.value || id.value == null) return;
+        const noteId = id.value;
 
-        const confirmed = await dialog({
-            title: "Удалить заметку?",
-            text: "Данные будут удалены окончательно",
-            buttons: [
-                {
-                    title: "Отмена",
-                    value: false,
-                },
-                {
-                    title: "Подтвердить",
-                    variant: "outline",
-                    value: true,
-                },
-            ],
-        });
+        if (
+            isNew.value ||
+            noteId == null ||
+            isProcessing.value
+        ) {
+            return;
+        }
 
-        if (!confirmed) return;
+        isProcessing.value = true;
 
-        await remove(id.value);
+        try {
+            const confirmed = await dialog({
+                title: "Удалить заметку?",
+                text: "Данные будут удалены окончательно",
+                buttons: [
+                    {
+                        title: "Отмена",
+                        value: false,
+                    },
+                    {
+                        title: "Подтвердить",
+                        variant: "outline",
+                        value: true,
+                    },
+                ],
+            });
 
-        await discardDraft();
+            if (!confirmed) return;
 
-        clearHistory();
+            await remove(noteId);
 
-        navigateTo("/");
+            await finishEditing();
+
+        } catch (error) {
+            
+            console.error(error);
+
+            await showOperationError("Не удалось удалить заметку");
+        } finally {
+            isProcessing.value = false;
+        }
     };
+
+    useSyncLayer(
+        isNew,
+        id,
+        async () => {
+            await discardDraft();
+            clearHistory();
+        },
+    );
 
 
     onMounted(() => {
@@ -298,6 +385,21 @@
             height: 100%;
             display: flex;
             flex-direction: column;
+        }
+
+        @media (width <= 700px) {
+            &__top {
+                gap: 0.75rem;
+            }
+
+            &__actions {
+                flex-direction: column;
+
+                .button {
+                    width: 100%;
+                    justify-content: center;
+                }
+            }
         }
     }
 </style>

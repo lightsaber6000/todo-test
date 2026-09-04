@@ -4,7 +4,11 @@
             <Button iconOnly ariaLabel="Редактировать" :to="`/notes/${note.id}`">
                 <Pencil />
             </Button>
-            <Button iconOnly ariaLabel="Удалить" @click="$emit('remove', $event)">
+            <Button
+                iconOnly
+                ariaLabel="Удалить"
+                :disabled="removing"
+                @click="$emit('remove', $event)">
                 <Trash />
             </Button>
         </div>
@@ -25,6 +29,7 @@
 
     const props = defineProps<{
         note: Note;
+        removing?: boolean;
     }>();
 
     defineEmits(["remove"]);
@@ -47,12 +52,15 @@
             font-size: 1.4rem;
             font-weight: 600;
             margin-bottom: 2.5rem;
+            overflow-wrap: anywhere;
         }
         &__todos {
             display: grid;
             gap: 0.625rem;
         }
         &__todos-item {
+            overflow-wrap: anywhere;
+
             &--completed {
                 text-decoration: line-through;
             }

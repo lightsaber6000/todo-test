@@ -14,14 +14,14 @@
 </template>
 
 <script setup lang="ts">
-    import { computed, ref } from "vue";
+    import { computed, ref, watch } from "vue";
     import { setDialogFn, type DialogOptions, type DialogResult } from "~/services/dialogService";
 
     import Modal from "~/components/Modal.vue";
     import Button from "~/components/Button.vue";
 
     const options = ref<DialogOptions | null>(null);
-    let showModal = ref<boolean>(false);
+    const showModal = ref<boolean>(false);
     let resolveDialog: ((value: DialogResult) => void) | null = null;
 
     const buttons = computed(() => options.value?.buttons ?? [
@@ -32,7 +32,21 @@
         },
     ]);
 
+    const finishDialog = (value: DialogResult) => {
+        const resolve = resolveDialog;
+
+        if (!resolve) return;
+
+        resolveDialog = null;
+        resolve(value);
+
+        options.value = null;
+        showModal.value = false;
+    };
+
     setDialogFn((dialogOptions) => {
+        finishDialog(null);
+
         options.value = dialogOptions;
         showModal.value = true;
 
@@ -41,11 +55,13 @@
         });
     });
 
-    const handleButtonClick = (value: DialogResult) => {
-        resolveDialog?.(value);
+    watch(showModal, (isOpen) => {
+        if (!isOpen) {
+            finishDialog(null);
+        }
+    });
 
-        options.value = null;
-        showModal.value = false;
-        resolveDialog = null;
+    const handleButtonClick = (value: DialogResult) => {
+        finishDialog(value);
     };
 </script>

@@ -1,4 +1,4 @@
-import { ref, computed } from "vue";
+import { ref, computed, toRaw } from "vue";
 import type { Note } from "~/types/note";
 import type { Operation } from "~/types/history";
 
@@ -51,7 +51,7 @@ export const useHistory = () => {
                     note.todos.splice(
                         operation.index,
                         0,
-                        structuredClone(operation.todo),
+                        structuredClone(toRaw(operation.todo)),
                     );
                 }
                 break;
@@ -61,7 +61,7 @@ export const useHistory = () => {
                     note.todos.splice(
                         operation.index,
                         0,
-                        structuredClone(operation.todo),
+                        structuredClone(toRaw(operation.todo)),
                     );
                 } else {
                     note.todos.splice(operation.index, 1);
@@ -89,6 +89,7 @@ export const useHistory = () => {
 
         if (!operation) return;
 
+        console.log('redo');
         applyOperation(note, operation, "redo");
         undoStack.value.push(operation);
     };

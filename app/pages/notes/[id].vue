@@ -68,7 +68,7 @@
     
     import { useNotesStore } from "~/stores/notes";
     import { Undo, Redo } from '@lucide/vue';
-    import { computed, toRaw } from 'vue';
+    import { computed, toRaw, onMounted, onUnmounted } from 'vue';
     import Field from "~/components/Field.vue";
     import Button from "~/components/Button.vue";
     import TodoList from "~/components/TodoList.vue";
@@ -125,6 +125,7 @@
      } = useHistory();
 
     let titleBeforeEdit = "";
+    let stopKeyboardEvents = false;
 
     const onSave = () => {
         if (id.value == null) return;
@@ -220,6 +221,7 @@
 
     const onFocus = () => {
         titleBeforeEdit = note.value.title;
+        stopKeyboardEvents = true;
     };
 
     const onBlur = () => {
@@ -232,7 +234,29 @@
         });
 
         titleBeforeEdit = "";
+        stopKeyboardEvents = false;
     };
+
+    const historyHotkeyHandle = (event: KeyboardEvent) => {
+       const isUndoHotkey = event.ctrlKey && !event.shiftKey && event.code === 'KeyZ';
+       const isRedoHotkey = event.ctrlKey && event.shiftKey && event.code === 'KeyZ';
+
+       if (stopKeyboardEvents) return;
+
+       if (isUndoHotkey || isRedoHotkey) event.preventDefault();
+
+       if (isUndoHotkey && canUndo.value) undo(note.value);
+
+       if (isRedoHotkey && canRedo.value) redo(note.value);
+    }
+
+    onMounted(() => {
+        document.addEventListener('keydown', historyHotkeyHandle);
+    });
+
+    onUnmounted(() => {
+        document.removeEventListener('keydown', historyHotkeyHandle);
+    })
 </script>
 
 <style lang="scss">

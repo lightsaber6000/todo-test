@@ -4,7 +4,6 @@ const getEmptyNote = (): Note => ({
     id: crypto.randomUUID(),
     title: '',
     todos: [],
-    revision: 0,
 });
 
 export default getEmptyNote;

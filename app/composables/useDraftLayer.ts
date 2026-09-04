@@ -31,7 +31,6 @@ export const useDraftLayer = (isNew: Ref<boolean>, id: Ref<string | undefined>, 
             {
                 noteId: draftKey.value,
                 note: structuredClone(toRaw(note.value)),
-                baseRevision: note.value.revision,
             },
             draftKey.value,
         );

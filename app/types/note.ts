@@ -8,13 +8,11 @@ export type Note = {
     id: string;
     title: string;
     todos: Todo[];
-    revision: number;
 };
 
 export type Draft = {
     noteId: string;
     note: Note;
-    baseRevision: number;
 };
 
 export type Metadata = {

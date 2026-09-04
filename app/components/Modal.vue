@@ -110,6 +110,8 @@
             return;
         }
 
+        document.body.classList.toggle('is-blocked', isOpen);
+
         previouslyFocusedElement?.focus();
         previouslyFocusedElement = null;
     });

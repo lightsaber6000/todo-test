@@ -115,6 +115,17 @@
         await navigateTo("/");
     });
 
+    const {
+        canRedo,
+        canUndo,
+        clear,
+        redo,
+        undo,
+        push,
+     } = useHistory();
+
+    let titleBeforeEdit = "";
+
     const onSave = () => {
         if (id.value == null) return;
 
@@ -142,6 +153,7 @@
         });
 
         if (confirmed) {
+            clear();
             navigateTo('/');
         }
     };
@@ -163,19 +175,6 @@
             navigateTo('/');
         }
     };
-
-    const {
-        undoStack,
-        redoStack,
-        canRedo,
-        canUndo,
-        clear,
-        redo,
-        undo,
-        push,
-     } = useHistory();
-
-    let titleBeforeEdit = "";
 
     const onUndo = () => {
         undo(note.value);

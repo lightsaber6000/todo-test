@@ -110,8 +110,6 @@ export const useHistory = () => {
     const canRedo = computed(() => !!redoStack.value.length);
 
     return {
-        undoStack,
-        redoStack,
         canRedo,
         canUndo,
         clear,

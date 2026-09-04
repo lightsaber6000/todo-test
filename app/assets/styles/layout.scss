@@ -10,6 +10,10 @@ body {
 
 body {
     font-family: var(--font-base);
+
+    &.is-blocked {
+        overflow: hidden;
+    }
 }
 
 .container {
